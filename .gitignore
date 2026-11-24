@@ -1,0 +1,8 @@
+
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+driver_assistant.db
+.DS_Store
+.env
