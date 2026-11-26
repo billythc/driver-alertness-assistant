@@ -1,17 +1,42 @@
+import os
+import tempfile
+
+os.environ["DATABASE_PATH"] = os.path.join(
+    tempfile.gettempdir(),
+    "driver_alertness_test.db"
+)
 
 from datetime import datetime, timedelta
-
 from fastapi.testclient import TestClient
 from main import app
+
 
 client = TestClient(app)
 
 
 def create_active_shift():
-    started_at = (datetime.now() - timedelta(hours=1)).isoformat(timespec="seconds")
-    response = client.post("/shifts", params={"started_at": started_at})
+    started_at = (
+        datetime.now() - timedelta(hours=1)
+    ).isoformat(timespec="seconds")
+
+    response = client.post(
+        "/shifts",
+        params={"started_at": started_at}
+    )
+
     assert response.status_code == 200
     return response.json()["shift_id"]
+
+
+def end_test_shift(shift_id):
+    response = client.put(
+        f"/shifts/{shift_id}/end",
+        params={
+            "ended_at": datetime.now().isoformat(timespec="seconds")
+        }
+    )
+
+    assert response.status_code == 200
 
 
 def test_home():
@@ -23,6 +48,7 @@ def test_home():
 def test_create_shift():
     shift_id = create_active_shift()
     assert shift_id > 0
+    end_test_shift(shift_id)
 
 
 def test_caffeine_tracking():
@@ -42,6 +68,8 @@ def test_caffeine_tracking():
     assert result.status_code == 200
     assert result.json()["total_caffeine_mg"] == 80
 
+    end_test_shift(shift_id)
+
 
 def test_hydration_tracking():
     shift_id = create_active_shift()
@@ -59,6 +87,8 @@ def test_hydration_tracking():
     result = client.get(f"/shifts/{shift_id}/hydration")
     assert result.status_code == 200
     assert result.json()["total_water_ml"] == 500
+
+    end_test_shift(shift_id)
 
 
 def test_sleep_tracking():
@@ -81,7 +111,8 @@ def test_alertness_warning():
         params={
             "alertness_level": 1,
             "feeling_sleepy": True,
-            "difficulty_focusing": False
+            "difficulty_focusing": False,
+            "checked_at": datetime.now().isoformat(timespec="seconds")
         }
     )
 
@@ -93,9 +124,10 @@ def test_dashboard():
     shift_id = create_active_shift()
 
     response = client.get(f"/dashboard/{shift_id}")
-
     assert response.status_code == 200
     assert response.json()["shift_id"] == shift_id
+
+    end_test_shift(shift_id)
 
 
 def test_invalid_alertness_level():
@@ -104,7 +136,8 @@ def test_invalid_alertness_level():
         params={
             "alertness_level": 6,
             "feeling_sleepy": False,
-            "difficulty_focusing": False
+            "difficulty_focusing": False,
+            "checked_at": datetime.now().isoformat(timespec="seconds")
         }
     )
 
