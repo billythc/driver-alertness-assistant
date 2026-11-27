@@ -1,6 +1,8 @@
-
 import sqlite3
 import os
+import psycopg
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 DATABASE = os.environ.get(
     "DATABASE_PATH",
@@ -11,7 +13,55 @@ DATABASE = os.environ.get(
 )
 
 
+class PostgresCursor:
+    def __init__(self, cursor):
+        self.cursor = cursor
+        self.lastrowid = None
+
+    def execute(self, query, params=()):
+        query = query.replace("?", "%s")
+
+        if query.strip().upper().startswith("INSERT INTO"):
+            if "RETURNING" not in query.upper():
+                query = query.rstrip().rstrip(";") + " RETURNING id"
+
+        self.cursor.execute(query, params)
+
+        if query.strip().upper().startswith("INSERT INTO"):
+            result = self.cursor.fetchone()
+            self.lastrowid = result[0]
+
+        return self
+
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    @property
+    def rowcount(self):
+        return self.cursor.rowcount
+
+
+class PostgresConnection:
+    def __init__(self, connection):
+        self.connection = connection
+
+    def cursor(self):
+        return PostgresCursor(self.connection.cursor())
+
+    def commit(self):
+        self.connection.commit()
+
+    def close(self):
+        self.connection.close()
+
+
 def connect():
+    if DATABASE_URL:
+        return PostgresConnection(psycopg.connect(DATABASE_URL))
+
     connection = sqlite3.connect(DATABASE)
     connection.execute("PRAGMA foreign_keys = ON")
     return connection
@@ -19,21 +69,28 @@ def connect():
 
 # CREATE TABLES
 
+
 def initialize_database():
     connection = connect()
     cursor = connection.cursor()
 
-    cursor.execute("""
+    id_column = (
+        "BIGSERIAL PRIMARY KEY"
+        if DATABASE_URL
+        else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    )
+
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS shifts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {id_column},
         started_at TEXT NOT NULL,
         ended_at TEXT
     )
     """)
 
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS breaks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {id_column},
         shift_id INTEGER NOT NULL,
         started_at TEXT NOT NULL,
         ended_at TEXT,
@@ -41,9 +98,9 @@ def initialize_database():
     )
     """)
 
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS caffeine_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {id_column},
         shift_id INTEGER NOT NULL,
         amount_mg REAL NOT NULL,
         logged_at TEXT NOT NULL,
@@ -51,9 +108,9 @@ def initialize_database():
     )
     """)
 
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS hydration_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {id_column},
         shift_id INTEGER NOT NULL,
         amount_ml REAL NOT NULL,
         logged_at TEXT NOT NULL,
@@ -61,19 +118,18 @@ def initialize_database():
     )
     """)
 
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS sleep_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {id_column},
         sleep_hours REAL NOT NULL,
         logged_at TEXT NOT NULL,
         notes TEXT
     )
     """)
 
-
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS alertness_checks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {id_column},
         alertness_level INTEGER NOT NULL,
         feeling_sleepy INTEGER NOT NULL,
         difficulty_focusing INTEGER NOT NULL,
@@ -82,7 +138,6 @@ def initialize_database():
         checked_at TEXT NOT NULL
     )
     """)
-
 
     connection.commit()
     connection.close()
