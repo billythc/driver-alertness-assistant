@@ -1,7 +1,12 @@
-
 # Driver Alertness Assistant
 
-A FastAPI-based backend application designed to help professional drivers monitor their shifts, breaks, caffeine intake, hydration, sleep and self-reported alertness.
+A full-stack web application designed to help professional drivers monitor their working shifts, breaks, caffeine consumption, hydration, sleep and self-reported alertness.
+
+Built with **Python, FastAPI, React and PostgreSQL**, this project explores how software can support driver awareness, personal tracking and fatigue management.
+
+**Live Demo:** https://driver-alertness-assistant-94t0cailj-williams-projects8.vercel.app/
+
+**GitHub Repository:** https://github.com/billythc/driver-alertness-assistant
 
 ## Features
 
@@ -11,66 +16,53 @@ A FastAPI-based backend application designed to help professional drivers monito
 - Caffeine intake logging
 - Water intake tracking
 - Sleep tracking
-- Alertness self-assessment
+- Self-reported alertness assessments
 - Driver dashboard with shift summaries
+- Charts and activity history
+- Data visualisation using Recharts
+- PDF reporting
+- English and Spanish language support
 - Input validation and HTTP error handling
-- Automated API tests using pytest
+- Persistent PostgreSQL database
+- Automated API testing
 
 ## Technology Stack
 
+### Backend
 - Python
 - FastAPI
-- SQLite
-- Pytest
+- PostgreSQL
+- SQLite (local development)
+- Psycopg
 - REST API
-- Git
 
-## Installation
+### Frontend
+- React
+- JavaScript
+- Vite
+- Recharts
+- CSS
 
-Clone the repository:
+### Testing and Deployment
+- Pytest
+- Git and GitHub
+- Render (backend hosting)
+- Vercel (frontend hosting)
+- Neon (PostgreSQL database)
+
+## Architecture
+
+The application uses a separate frontend and backend architecture.
+
+- **React frontend:** Provides the user interface, dashboard, charts and user interactions.
+- **FastAPI backend:** Handles API requests, application logic, validation and database operations.
+- **PostgreSQL:** Stores persistent application data using Neon.
+- **SQLite:** Provides a lightweight database for local development and automated tests.
+
+## Getting Started
+
+### 1. Clone the repository
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/billythc/driver-alertness-assistant.git
 cd driver-alertness-assistant
-```
-
-Create a virtual environment:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
-python -m pip install "fastapi[standard]" pytest
-```
-
-## Run the Application
-
-```bash
-fastapi dev main.py
-```
-
-Open the API documentation:
-
-http://127.0.0.1:8000/docs
-
-## Run Tests
-
-```bash
-python -m pytest -v
-```
-
-## Project Purpose
-
-This project explores how backend software can support professional drivers through shift management, personal tracking and fatigue-awareness tools.
-
-**Safety note:** This application is not a medical device and cannot determine whether someone is safe to drive. Alertness assessments are self-reported and are not validated safety predictions.
-
-## Developer
-
-Williams Ikpe
-
-BSc Computer Science
